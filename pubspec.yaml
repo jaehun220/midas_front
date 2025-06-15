@@ -34,8 +34,9 @@ dependencies:
   sensors_plus: ^3.0.3
   get: ^4.6.6
   flutter_compass: ^0.8.1
-  flutter_inappwebview: ^5.7.2
+  flutter_inappwebview: ^6.1.5
   http: ^1.4.0
+
   
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -64,7 +65,7 @@ flutter:
         - asset: assets/fonts/Pretendard-SemiBold.otf
         - asset: assets/fonts/Pretendard-Regular.otf
   assets:
-    - assets/images/
+    - lib/3map.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
