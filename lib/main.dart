@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'dart:math' as math;
+import 'dart:async';
+import 'package:get/get.dart';
 import 'components/bottom_Navbar.dart';
+import 'function/sensor_controller.dart';
+import 'function/Predict_api.dart';
+import 'function/Predict_request.dart';
+import 'function/Predict_response.dart';
 
-// 기존 마커 + 화살표 마커 (마커 8개)
 final List<Map<String, dynamic>> markerList = [
-  {"x": 200, "y": 830},
-  {"x": 1650, "y": 600},
-  {"x": 1650, "y": 830},
-  {"x": 1650, "y": 1120},
-  {"x": 2730, "y": 480},
-  {"x": 2730, "y": 830},
-  {"x": 3100, "y": 830},
-  {"x": 2915, "y": 200, "isArrow": true}, // <-- 화살표 마커
+  {"x": 200, "y": 830},     // 1
+  {"x": 1650, "y": 1120},   // 2
+  {"x": 1650, "y": 830},    // 3
+  {"x": 1650, "y": 600},    // 4
+  {"x": 2730, "y": 830},    // 5
+  {"x": 2730, "y": 480},    // 6
+  {"x": 3100, "y": 830},    // 7
+  {"x": 2915, "y": 200, "isArrow": true}, // 화살표 마커
 ];
 
-// 이미지 원본 사이즈
 const double imageOriginWidth = 3508;
 const double imageOriginHeight = 1422;
 
@@ -28,7 +32,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       title: '캠퍼스 지도',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(useMaterial3: true),
@@ -45,16 +49,41 @@ class CampusMapPage extends StatefulWidget {
 }
 
 class _CampusMapPageState extends State<CampusMapPage> {
-  double? _heading; // 방위(heading, 북쪽이 0)
+  double? _heading;
+  int? selectedPredictionIndex;
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    Get.put(SensorController());
+
     FlutterCompass.events?.listen((CompassEvent event) {
       setState(() {
         _heading = event.heading;
       });
     });
+
+    fetchPredictionAndUpdateMarker();
+    _timer = Timer.periodic(const Duration(seconds: 2), (_) => fetchPredictionAndUpdateMarker());
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void fetchPredictionAndUpdateMarker() async {
+    final controller = Get.find<SensorController>();
+    final request = controller.getCurrentSensorValues();
+    final result = await PredictApi.fetchPrediction(request);
+
+    if (result != null) {
+      setState(() {
+        selectedPredictionIndex = result.num; // 1~7 범위
+      });
+    }
   }
 
   @override
@@ -80,19 +109,19 @@ class _CampusMapPageState extends State<CampusMapPage> {
                   ),
                   child: Stack(
                     children: [
-                      // 지도 이미지
                       Image.asset(
                         'lib/3map.png',
                         fit: BoxFit.fitHeight,
                         height: displayHeight,
                         width: displayWidth,
                       ),
-                      // 마커와 화살표
-                      ...markerList.map((marker) {
+                      ...markerList.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final marker = entry.value;
+                        final markerNumber = i + 1;
                         double scaledLeft = (marker['x']! / imageOriginWidth) * displayWidth;
-                        double scaledTop  = (marker['y']! / imageOriginHeight) * displayHeight;
+                        double scaledTop = (marker['y']! / imageOriginHeight) * displayHeight;
 
-                        // 화살표 마커(heading 표시, 18도 밑쪽 보정)
                         if (marker['isArrow'] == true) {
                           return Positioned(
                             left: scaledLeft - 16,
@@ -101,29 +130,18 @@ class _CampusMapPageState extends State<CampusMapPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Transform.rotate(
-                                  // 18도 + 180도(밑쪽) 보정
-                                  angle: (((_heading ?? 0) - 18 + 180) * (math.pi / 180) * -1),
-                                  child: Icon(
-                                    Icons.navigation,
-                                    size: 32,
-                                    color: Colors.blue,
-                                  ),
+
+
+                                 angle: (((_heading ?? 0) - 18 + 180) * (math.pi / 180) * -1),
+                                  child: const Icon(Icons.navigation, size: 32, color: Colors.blue),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(
-                                  "(${marker['x']}, ${marker['y']})",
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                                Text("(${marker['x']}, ${marker['y']})", style: const TextStyle(fontSize: 11)),
                               ],
                             ),
                           );
                         }
 
-                        // 일반 마커
                         return Positioned(
                           left: scaledLeft - 8,
                           top: scaledTop - 8,
@@ -134,24 +152,17 @@ class _CampusMapPageState extends State<CampusMapPage> {
                                 width: 16,
                                 height: 16,
                                 decoration: BoxDecoration(
-                                  color: Colors.red,
+                                  color: selectedPredictionIndex == markerNumber ? Colors.blue : Colors.red,
                                   shape: BoxShape.circle,
                                   border: Border.all(color: Colors.white, width: 2),
                                 ),
                               ),
                               const SizedBox(height: 2),
-                              Text(
-                                "(${marker['x']}, ${marker['y']})",
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                              Text("($markerNumber)", style: const TextStyle(fontSize: 10)),
                             ],
                           ),
                         );
-                      }),
+                      })
                     ],
                   ),
                 ),
@@ -161,10 +172,7 @@ class _CampusMapPageState extends State<CampusMapPage> {
         ),
       ),
       bottomNavigationBar: SafeArea(
-        child: BottomNavBar(
-          navigating: false,
-          onStopNavigation: () {},
-        ),
+        child: BottomNavBar(navigating: false, onStopNavigation: () {}),
       ),
     );
   }

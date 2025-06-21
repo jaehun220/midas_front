@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:get/get.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'package:flutter_compass/flutter_compass.dart';
+import 'Predict_request.dart';
 
 class SensorData {
   double x, y, z;
@@ -95,5 +96,17 @@ class SensorController extends GetxController {
         data.roll = roll;
       }
     });
+  }
+  PredictRequest getCurrentSensorValues()
+  {
+    final mag = magnetometer.value;
+    final oriX = direction.value;
+
+    return PredictRequest(
+        magX: mag.x.round(),
+        magY: mag.y.round(),
+        magZ: mag.z.round(),
+        oriX: oriX.round(),
+    );
   }
 }
