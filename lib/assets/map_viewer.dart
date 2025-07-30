@@ -4,27 +4,27 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'dart:convert';
 
-class KakaoMapView extends StatefulWidget {
-  const KakaoMapView({super.key});
+class MapView extends StatefulWidget {
+  const MapView({super.key});
 
   @override
-  State<KakaoMapView> createState() => _KakaoMapViewState();
+  State<MapView> createState() => _MapViewState();
 }
 
-class _KakaoMapViewState extends State<KakaoMapView> {
+class _MapViewState extends State<MapView> {
   late InAppWebViewController webViewController;
 
   @override
   Widget build(BuildContext context) {
-    final jsKey = dotenv.env['KAKAO_JS_KEY']!;
+    final jsKey = dotenv.env['NAVER_CLIENT_KEY']!;
     return Scaffold(
       appBar: AppBar(title: const Text("카카오 맵")),
       body: FutureBuilder(
-        future: DefaultAssetBundle.of(context).loadString('assets/kakao_map_template.html'),
+        future: DefaultAssetBundle.of(context).loadString('assets/naver_map.html'),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-          final htmlString = snapshot.data!.replaceAll('{{KAKAO_JS_KEY}}', jsKey);
+          final htmlString = snapshot.data!.replaceAll('{{NAVER_CLIENT_KEY}}', jsKey);
 
           return InAppWebView(
             initialUrlRequest: URLRequest(

@@ -182,7 +182,7 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'assets/kakaomap_view.dart'; // 👈 경로 주의
+import 'assets/map_viewer.dart'; // 👈 경로 주의
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env"); // .env 로딩
@@ -199,7 +199,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const KakaoMapView(), // 👈 여기서 호출
+      home: const MapView(), // 👈 여기서 호출
       debugShowCheckedModeBanner: false,
     );
   }
